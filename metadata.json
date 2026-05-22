@@ -1,0 +1,8 @@
+{
+  "name": "ParkNote",
+  "description": "Interactive AI-powered lecture recording, visual note-taking, and active-recall studying assistant with automated summaries, diagrams, and dictionary lookup.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
