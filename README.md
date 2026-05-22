@@ -46,8 +46,8 @@ React 19 + Vite, TypeScript, Express API, @google/genai (Gemini), Firebase Auth,
 | `npm run clean` | `dist` və `server.js` təmizlənir |
 
 ## Demo hesablar
-- `aylan@macabalitao.com` / `aylan`
-- `admin@parknote.com` / `admin123`
+- `aylan@macabalitao.com` / 
+- `admin@parknote.com` / 
 
 ## Məlumatların saxlanması
 Qeydlər, hesablar və ayarlar lokal olaraq `localStorage`-da saxlanır. Brauzer yaddaşı silinərsə demo məlumatlar yenidən yüklənir.
