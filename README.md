@@ -49,5 +49,3 @@ React 19 + Vite, TypeScript, Express API, @google/genai (Gemini), Firebase Auth,
 - `aylan@macabalitao.com` / 
 - `admin@parknote.com` / 
 
-## Məlumatların saxlanması
-Qeydlər, hesablar və ayarlar lokal olaraq `localStorage`-da saxlanır. Brauzer yaddaşı silinərsə demo məlumatlar yenidən yüklənir.
