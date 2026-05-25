@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { LectureNote, ChatMessage } from "../types";
 import { Sparkles, Send, X, Bot, User, RefreshCw, AlertCircle, HelpCircle } from "lucide-react";
+import { authFetch } from "../lib/api";
 
 interface ChatSparkModalProps {
   isOpen: boolean;
@@ -69,7 +70,7 @@ export default function ChatSparkModal({ isOpen, onClose, activeNote }: ChatSpar
         }
       }
 
-      const response = await fetch("/api/chat", {
+      const response = await authFetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

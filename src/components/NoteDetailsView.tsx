@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { LectureNote, DiagramNode } from "../types";
 import ScribbleEmblem from "./ScribbleEmblem";
+import { authFetch } from "../lib/api";
 import { 
   ArrowLeft, Share2, Play, ZoomIn, Sparkles, Youtube, Check, Copy, HelpCircle, 
   FileText, Compass, ChevronDown, Search, RefreshCw, AlertCircle, Link2,
@@ -102,7 +103,7 @@ export default function NoteDetailsView({ note, onBack, onUpdateNote }: NoteDeta
         }
       }
 
-      const res = await fetch("/api/explain-phrase", {
+      const res = await authFetch("/api/explain-phrase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -161,7 +162,7 @@ export default function NoteDetailsView({ note, onBack, onUpdateNote }: NoteDeta
         }
       }
 
-      const res = await fetch("/api/generate-diagram-image", {
+      const res = await authFetch("/api/generate-diagram-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -533,7 +534,7 @@ export default function NoteDetailsView({ note, onBack, onUpdateNote }: NoteDeta
         }
       }
 
-      const resp = await fetch("/api/revise-note", {
+      const resp = await authFetch("/api/revise-note", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -17,10 +17,8 @@ interface ProfileViewProps {
   profileName: string;
   onChangeProfileName: (name: string) => void;
   profileEmail?: string;
-  onChangeProfileEmail?: (email: string) => void;
   profileBio?: string;
   onChangeProfileBio?: (bio: string) => void;
-  userPassword?: string;
   activePalette?: string;
   onChangePalette?: (id: string) => void;
 }
@@ -37,8 +35,6 @@ interface StudyGoal {
 export interface ModelHubRole {
   provider: string;
   model: string;
-  apiKey: string;
-  endpoint?: string;
 }
 
 export interface ModelHubConfig {
@@ -50,11 +46,11 @@ export interface ModelHubConfig {
 }
 
 export const DEFAULT_HUB_CONFIG: ModelHubConfig = {
-  compiler: { provider: "gemini", model: "gemini-3.5-flash", apiKey: "" },
-  reviser: { provider: "gemini", model: "gemini-3.5-flash", apiKey: "" },
-  chat: { provider: "gemini", model: "gemini-3.5-flash", apiKey: "" },
-  explainer: { provider: "gemini", model: "gemini-3.5-flash", apiKey: "" },
-  diagram: { provider: "gemini", model: "gemini-3.1-flash-image-preview", apiKey: "" }
+  compiler: { provider: "gemini", model: "gemini-3.5-flash" },
+  reviser: { provider: "gemini", model: "gemini-3.5-flash" },
+  chat: { provider: "gemini", model: "gemini-3.5-flash" },
+  explainer: { provider: "gemini", model: "gemini-3.5-flash" },
+  diagram: { provider: "gemini", model: "gemini-3.1-flash-image-preview" }
 };
 
 const AVATAR_STYLES = [
@@ -77,10 +73,8 @@ export default function ProfileView({
   profileName,
   onChangeProfileName,
   profileEmail,
-  onChangeProfileEmail,
   profileBio,
   onChangeProfileBio,
-  userPassword,
   activePalette = "classic-purple",
   onChangePalette,
 }: ProfileViewProps) {
@@ -149,35 +143,6 @@ export default function ProfileView({
     setCustomBenchmark("Before Friday");
   };
 
-  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [newEmailValue, setNewEmailValue] = useState("");
-  const [emailAuthPassword, setEmailAuthPassword] = useState("");
-  const [emailAuthError, setEmailAuthError] = useState("");
-
-  const handleOpenEmailModal = () => {
-    setNewEmailValue(profileEmail || "");
-    setEmailAuthPassword("");
-    setEmailAuthError("");
-    setIsEmailModalOpen(true);
-  };
-
-  const handleSubmitEmailUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailAuthPassword) {
-      setEmailAuthError("Password is required to change email.");
-      return;
-    }
-    // Verify password locally
-    if (emailAuthPassword !== userPassword) {
-      setEmailAuthError("Incorrect password. Verification failed.");
-      return;
-    }
-    // Success
-    if (onChangeProfileEmail) {
-      onChangeProfileEmail(newEmailValue);
-    }
-    setIsEmailModalOpen(false);
-  };
 
   const handleShuffleAvatar = () => {
     const words = ["Quantum", "Curious", "Scholar", "Physio", "Atom", "Stellar", "Cellular", "Enzyme", "Spark", "Luna", "Aylan", "Helix"];
@@ -285,11 +250,20 @@ export default function ProfileView({
   const [activeRoleTab, setActiveRoleTab] = useState<"compiler" | "reviser" | "chat" | "explainer" | "diagram">("compiler");
   const [isSavedNotify, setIsSavedNotify] = useState(false);
 
+  const sanitizeHubConfig = (config: ModelHubConfig): ModelHubConfig => ({
+    compiler: { provider: config.compiler.provider, model: config.compiler.model },
+    reviser: { provider: config.reviser.provider, model: config.reviser.model },
+    chat: { provider: config.chat.provider, model: config.chat.model },
+    explainer: { provider: config.explainer.provider, model: config.explainer.model },
+    diagram: { provider: config.diagram.provider, model: config.diagram.model }
+  });
+
   useEffect(() => {
     const saved = localStorage.getItem("parknote_custom_ai_hub_config");
     if (saved) {
       try {
-        setHubConfig({ ...DEFAULT_HUB_CONFIG, ...JSON.parse(saved) });
+        const parsed = JSON.parse(saved);
+        setHubConfig(sanitizeHubConfig({ ...DEFAULT_HUB_CONFIG, ...parsed }));
       } catch (e) {
         setHubConfig(DEFAULT_HUB_CONFIG);
       }
@@ -297,7 +271,9 @@ export default function ProfileView({
   }, []);
 
   const handleSaveHubConfig = () => {
-    localStorage.setItem("parknote_custom_ai_hub_config", JSON.stringify(hubConfig));
+    const safeConfig = sanitizeHubConfig(hubConfig);
+    localStorage.setItem("parknote_custom_ai_hub_config", JSON.stringify(safeConfig));
+    setHubConfig(safeConfig);
     setIsSavedNotify(true);
     setTimeout(() => {
       setIsSavedNotify(false);
@@ -396,77 +372,11 @@ export default function ProfileView({
                   placeholder="Enter your email address"
                   className="w-full px-4 py-2.5 rounded-xl bg-[#1D1B20] text-zinc-400 border border-[#49454F]/35 focus:outline-none text-xs font-sans font-bold cursor-not-allowed opacity-70"
                 />
-                <button
-                  onClick={handleOpenEmailModal}
-                  className="px-4 py-2.5 rounded-xl bg-[#4F378B]/20 text-[#D0BCFF] border border-[#D0BCFF]/30 hover:bg-[#4F378B]/40 transition text-[10px] font-bold uppercase tracking-wider whitespace-nowrap cursor-pointer"
-                >
-                  Change
-                </button>
+                <span className="px-4 py-2.5 rounded-xl bg-[#2A2630] text-[#CAC4D0] border border-[#49454F]/40 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">
+                  Managed by Google
+                </span>
               </div>
             </div>
-
-            {/* Email Edit Modal Overlay */}
-            {isEmailModalOpen && (
-              <div className="fixed inset-0 bg-[#0E0D10]/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fade-in">
-                <form 
-                  onSubmit={handleSubmitEmailUpdate}
-                  className="rounded-3xl border border-[#D0BCFF]/30 bg-[#211F26] p-6 max-w-sm w-full space-y-4 shadow-2xl relative text-left"
-                >
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-white">Update Email Address</h3>
-                  <p className="text-[#CAC4D0] text-xs font-sans">
-                    Please provide your new email address and verify your current password to proceed.
-                  </p>
-                  
-                  {emailAuthError && (
-                    <div className="bg-red-950/30 border border-red-900/50 p-2.5 rounded-xl text-red-400 text-[10px] font-bold uppercase tracking-wide">
-                      {emailAuthError}
-                    </div>
-                  )}
-
-                  <div className="space-y-3 pt-1">
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase tracking-widest text-zinc-400 block font-bold">New Email Address:</label>
-                      <input
-                        type="email"
-                        required
-                        value={newEmailValue}
-                        onChange={(e) => setNewEmailValue(e.target.value)}
-                        placeholder="new.email@university.edu"
-                        className="w-full px-4 py-2.5 rounded-xl bg-[#1D1B20] text-white border border-[#49454F]/55 focus:outline-none focus:border-[#D0BCFF] text-xs font-sans font-bold"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] uppercase tracking-widest text-zinc-400 block font-bold">Current Password:</label>
-                      <input
-                        type="password"
-                        required
-                        value={emailAuthPassword}
-                        onChange={(e) => setEmailAuthPassword(e.target.value)}
-                        placeholder="••••••••"
-                        className="w-full px-4 py-2.5 rounded-xl bg-[#1D1B20] text-white border border-[#49454F]/55 focus:outline-none focus:border-[#D0BCFF] text-xs font-mono font-bold tracking-widest"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setIsEmailModalOpen(false)}
-                      className="h-10 text-[10px] font-bold uppercase rounded-xl border border-[#49454F] hover:bg-[#1D1B20] text-[#CAC4D0] transition font-sans cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={!newEmailValue || !emailAuthPassword}
-                      className="h-10 text-[10px] font-bold uppercase rounded-xl bg-[#D0BCFF] text-[#21005D] hover:bg-[#EADDFF] transition font-sans disabled:opacity-40 cursor-pointer"
-                    >
-                      Confirm Update
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
 
             {/* Bio input field */}
             <div className="space-y-1.5">
@@ -848,7 +758,7 @@ export default function ProfileView({
             </div>
 
             <p className="text-[10px] text-[#938F99] leading-relaxed">
-              Configure custom keys, endpoints, and models for each LLM or graphic module. Defaults back to our sandbox when keys are empty.
+              Choose providers and models for each module. API keys are handled on the server to avoid storing secrets in the browser.
             </p>
 
             {/* Micro Tab Selector */}
@@ -880,8 +790,8 @@ export default function ProfileView({
                 <label className="text-[9px] uppercase tracking-widest text-[#938F99] block mb-1">
                   Active Provider ({activeRoleTab.toUpperCase()}):
                 </label>
-                <div className="grid grid-cols-3 gap-1">
-                  {["gemini", "openai", "deepseek"].map((prov) => (
+                <div className="grid grid-cols-4 gap-1">
+                  {["gemini", "openai", "deepseek", "openrouter"].map((prov) => (
                     <button
                       key={prov}
                       type="button"
@@ -895,31 +805,12 @@ export default function ProfileView({
                           updated[activeRoleTab].model = activeRoleTab === "diagram" ? "dall-e-3" : "gpt-4o";
                         } else if (prov === "deepseek") {
                           updated[activeRoleTab].model = "deepseek-chat";
-                        }
-                        setHubConfig(updated);
-                      }}
-                      className={`py-1 px-2 text-[10px] rounded-lg border text-center transition cursor-pointer capitalize ${
-                        hubConfig[activeRoleTab].provider === prov
-                          ? "bg-[#A1F000]/15 border-[#A1F000] text-[#A1F000] font-bold"
-                          : "bg-[#1D1B20] border-[#49454F]/40 text-[#CAC4D0] hover:border-[#CAC4D0]"
-                      }`}
-                    >
-                      {prov}
-                    </button>
-                  ))}
-                  {["openrouter", "custom"].map((prov) => (
-                    <button
-                      key={prov}
-                      type="button"
-                      onClick={() => {
-                        const updated = { ...hubConfig };
-                        updated[activeRoleTab].provider = prov;
-                        if (prov === "openrouter") {
+                        } else if (prov === "openrouter") {
                           updated[activeRoleTab].model = activeRoleTab === "diagram" ? "dall-e-3" : "google/gemini-2.5-flash";
                         }
                         setHubConfig(updated);
                       }}
-                      className={`py-1 px-2 text-[10px] rounded-lg border text-center transition cursor-pointer col-span-1.5 capitalize ${
+                      className={`py-1 px-2 text-[10px] rounded-lg border text-center transition cursor-pointer capitalize ${
                         hubConfig[activeRoleTab].provider === prov
                           ? "bg-[#A1F000]/15 border-[#A1F000] text-[#A1F000] font-bold"
                           : "bg-[#1D1B20] border-[#49454F]/40 text-[#CAC4D0] hover:border-[#CAC4D0]"
@@ -947,42 +838,6 @@ export default function ProfileView({
                   placeholder="e.g. gpt-4o, claude-3-5-sonnet"
                 />
               </div>
-
-              <div>
-                <label className="text-[9px] uppercase tracking-widest text-[#938F99] block mb-1">
-                  Secret API Key Override:
-                </label>
-                <input
-                  type="password"
-                  value={hubConfig[activeRoleTab].apiKey}
-                  onChange={(e) => {
-                    const updated = { ...hubConfig };
-                    updated[activeRoleTab].apiKey = e.target.value;
-                    setHubConfig(updated);
-                  }}
-                  className="w-full px-3 py-1.5 rounded-lg bg-[#1D1B20] text-zinc-200 border border-[#49454F]/35 focus:outline-none focus:border-[#D0BCFF] text-xs font-mono"
-                  placeholder={hubConfig[activeRoleTab].provider === "gemini" ? "Optional (using standard environment)" : "Enter API Key override"}
-                />
-              </div>
-
-              {hubConfig[activeRoleTab].provider === "custom" && (
-                <div>
-                  <label className="text-[9px] uppercase tracking-widest text-[#938F99] block mb-1">
-                    Custom API Endpoint:
-                  </label>
-                  <input
-                    type="text"
-                    value={hubConfig[activeRoleTab].endpoint || ""}
-                    onChange={(e) => {
-                      const updated = { ...hubConfig };
-                      updated[activeRoleTab].endpoint = e.target.value;
-                      setHubConfig(updated);
-                    }}
-                    className="w-full px-3 py-1.5 rounded-lg bg-[#1D1B20] text-zinc-200 border border-[#49454F]/35 focus:outline-none focus:border-[#D0BCFF] text-xs font-mono"
-                    placeholder="https://your-custom-gateway.com/v1"
-                  />
-                </div>
-              )}
 
               <button
                 type="button"

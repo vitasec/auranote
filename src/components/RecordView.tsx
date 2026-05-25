@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { LectureNote } from "../types";
+import { authFetch } from "../lib/api";
 import {
   Mic,
   Square,
@@ -268,7 +269,7 @@ export default function RecordView({
         }
       }
 
-      const response = await fetch("/api/generate-note", {
+      const response = await authFetch("/api/generate-note", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

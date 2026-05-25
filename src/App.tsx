@@ -310,16 +310,6 @@ export default function App() {
     }
   };
 
-  const saveProfileEmail = (email: string) => {
-    if (currentUser) {
-      const updatedUser = { ...currentUser, email: email };
-      setCurrentUser(updatedUser);
-      localStorage.setItem("parknote_current_user", JSON.stringify(updatedUser));
-      const nextAccs = accounts.map((a) => (a.id === currentUser.id ? updatedUser : a));
-      saveAccounts(nextAccs);
-    }
-  };
-
   const saveProfileBio = (bio: string) => {
     if (currentUser) {
       const updatedUser = { ...currentUser, bio: bio };
@@ -356,7 +346,6 @@ export default function App() {
         id: "usr_aylan",
         email: "",
         fullName: "Aylan Macabalitao",
-        passwordHash: "",
         role: "user",
         avatarStyle: "miniavs",
         avatarSeed: "Aylan",
@@ -368,8 +357,7 @@ export default function App() {
         id: "usr_admin",
         email: "",
         fullName: "Admin Manager",
-        passwordHash: "",
-        role: "admin",
+        role: "user",
         avatarStyle: "bottts",
         avatarSeed: "Admin",
         createdAt: new Date().toISOString(),
@@ -442,14 +430,41 @@ export default function App() {
            // Fallback email match
            matchingAcc = accounts.find(a => a.email.toLowerCase() === firebaseUser.email?.toLowerCase());
         }
-        
-        if (matchingAcc) {
-          setCurrentUser(matchingAcc);
-          localStorage.setItem("parknote_current_user", JSON.stringify(matchingAcc));
-          setAvatarStyleState(matchingAcc.avatarStyle);
-          setAvatarSeedState(matchingAcc.avatarSeed);
-          setProfileNameState(matchingAcc.fullName);
+
+        if (!matchingAcc) {
+          const newAcc: UserAccount = {
+            id: firebaseUser.uid,
+            email: firebaseUser.email || "",
+            fullName: firebaseUser.displayName || "Scholar",
+            role: "user",
+            avatarStyle: "miniavs",
+            avatarSeed: firebaseUser.displayName || "Scholar",
+            createdAt: new Date().toISOString(),
+            status: "active",
+            notesCount: 0
+          };
+          const updated = [newAcc, ...accounts];
+          saveAccounts(updated);
+          matchingAcc = newAcc;
+        } else {
+          const updatedAcc = {
+            ...matchingAcc,
+            email: firebaseUser.email || matchingAcc.email,
+            fullName: firebaseUser.displayName || matchingAcc.fullName,
+            avatarSeed: matchingAcc.avatarSeed || firebaseUser.displayName || "Scholar"
+          };
+          if (updatedAcc.email !== matchingAcc.email || updatedAcc.fullName !== matchingAcc.fullName) {
+            const updatedList = accounts.map(acc => acc.id === matchingAcc!.id ? updatedAcc : acc);
+            saveAccounts(updatedList);
+            matchingAcc = updatedAcc;
+          }
         }
+
+        setCurrentUser(matchingAcc);
+        localStorage.setItem("parknote_current_user", JSON.stringify(matchingAcc));
+        setAvatarStyleState(matchingAcc.avatarStyle);
+        setAvatarSeedState(matchingAcc.avatarSeed);
+        setProfileNameState(matchingAcc.fullName);
       } else {
         // Not signed in
         setCurrentUser(null);
@@ -626,10 +641,8 @@ export default function App() {
             profileName={profileName}
             onChangeProfileName={saveProfileName}
             profileEmail={currentUser?.email}
-            onChangeProfileEmail={saveProfileEmail}
             profileBio={currentUser?.bio}
             onChangeProfileBio={saveProfileBio}
-            userPassword={currentUser?.passwordHash}
             activePalette={activePalette}
             onChangePalette={setActivePalette}
           />

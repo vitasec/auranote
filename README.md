@@ -28,8 +28,15 @@ React 19 + Vite, TypeScript, Express API, @google/genai (Gemini), Firebase Auth,
    # Optional:
    OPENAI_API_KEY=your_key
    DEEPSEEK_API_KEY=your_key
+   OPENROUTER_API_KEY=your_key
+   FIREBASE_SERVICE_ACCOUNT_JSON='{"type":"service_account", ... }'
+   # Optional for local-only dev:
+   ALLOW_UNAUTHENTICATED_DEV=true
+   # Optional host override (default 127.0.0.1):
+   HOST=0.0.0.0
    ```
 4. For Google sign-in, update `firebase-applet-config.json` with your Firebase project details (optional).
+   - API routes require Firebase ID tokens. Provide `FIREBASE_SERVICE_ACCOUNT_JSON` for the server or set `ALLOW_UNAUTHENTICATED_DEV=true` for local-only testing.
 5. Start the dev server:
    ```bash
    npm run dev
@@ -45,5 +52,3 @@ React 19 + Vite, TypeScript, Express API, @google/genai (Gemini), Firebase Auth,
 | `npm run lint` | TypeScript type-check |                                                                                                                                                                                                  
 | `npm run clean` | Cleans `dist` and `server.js` |                                                                                                                                                                                         
                                                                                                                                                                                                                                             
-
-

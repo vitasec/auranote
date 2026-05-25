@@ -9,11 +9,6 @@ import {
   UserCheck, 
   UserMinus, 
   ShieldAlert, 
-  RefreshCw, 
-  Lock, 
-  Mail, 
-  User, 
-  Check, 
   X,
   Plus,
   Shield,
@@ -43,14 +38,12 @@ export default function AdminView({
   // Edit fields
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
-  const [editPassword, setEditPassword] = useState("");
   const [editRole, setEditRole] = useState<"admin" | "user">("user");
   const [editStatus, setEditStatus] = useState<"active" | "suspended">("active");
 
   // Create fields
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState<"admin" | "user">("user");
 
   // Info Feedbacks
@@ -67,7 +60,6 @@ export default function AdminView({
     setEditingUser(user);
     setEditName(user.fullName);
     setEditEmail(user.email);
-    setEditPassword(user.passwordHash);
     setEditRole(user.role);
     setEditStatus(user.status);
     setIsEditModalOpen(true);
@@ -97,7 +89,6 @@ export default function AdminView({
           ...acc,
           fullName: editName.trim(),
           email: editEmail.trim().toLowerCase(),
-          passwordHash: editPassword,
           role: editRole,
           status: editStatus
         };
@@ -122,8 +113,8 @@ export default function AdminView({
     const cleanName = newName.trim();
     const cleanEmail = newEmail.trim().toLowerCase();
     
-    if (!cleanName || !cleanEmail || !newPassword) {
-      triggerToast("Error: All fields are required to seed an account.");
+    if (!cleanName || !cleanEmail) {
+      triggerToast("Error: Name and email are required to seed an account.");
       return;
     }
 
@@ -138,7 +129,6 @@ export default function AdminView({
       id: "usr_" + Math.random().toString(36).substring(2, 11),
       email: cleanEmail,
       fullName: cleanName,
-      passwordHash: newPassword,
       role: newRole,
       avatarStyle: "miniavs",
       avatarSeed: cleanName,
@@ -151,7 +141,6 @@ export default function AdminView({
     setIsCreateModalOpen(false);
     setNewName("");
     setNewEmail("");
-    setNewPassword("");
     setNewRole("user");
     triggerToast(`Successfully seeded live database record for "${cleanName}"`);
   };
@@ -407,7 +396,6 @@ export default function AdminView({
                     <td className="py-3.5 px-4">
                       <div className="space-y-0.5">
                         <span className="text-zinc-200 font-medium block">{user.email}</span>
-                        <span className="text-[9px] text-[#938F99] font-mono block">Pass Key: {user.passwordHash}</span>
                       </div>
                     </td>
 
@@ -542,18 +530,6 @@ export default function AdminView({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] uppercase tracking-wider text-[#938F99] font-bold block">Security Password:</label>
-                <input
-                  type="text"
-                  required
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Choose access password..."
-                  className="w-full px-3 py-2 bg-[#121214] border border-[#49454F]/40 focus:outline-none focus:border-[#D0BCFF] text-xs text-white rounded-xl placeholder-zinc-600 font-mono"
-                />
-              </div>
-
-              <div className="space-y-1">
                 <label className="text-[10px] uppercase tracking-wider text-[#938F99] font-bold block">Assigned Role Authority:</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -684,17 +660,6 @@ export default function AdminView({
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
                   className="w-full px-3 py-2 bg-[#121214] border border-[#49454F]/40 focus:outline-none focus:border-[#D0BCFF] text-xs text-white rounded-xl"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] uppercase tracking-wider text-[#938F99] font-bold block">Password Key Entry:</label>
-                <input
-                  type="text"
-                  required
-                  value={editPassword}
-                  onChange={(e) => setEditPassword(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#121214] border border-[#49454F]/40 focus:outline-none focus:border-[#D0BCFF] text-xs text-white rounded-xl font-mono"
                 />
               </div>
 

@@ -3,14 +3,64 @@ import path from "path";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type } from "@google/genai";
 import { createServer as createViteServer } from "vite";
+import * as admin from "firebase-admin";
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
 const PORT = 3000;
+const HOST = process.env.HOST || "127.0.0.1";
+const ALLOWED_PROVIDERS = new Set(["gemini", "openai", "deepseek", "openrouter"]);
 
 app.use(express.json({ limit: "10mb" }));
+
+let firebaseAdminApp: admin.app.App | null = null;
+
+function getFirebaseAdmin() {
+  if (firebaseAdminApp) return firebaseAdminApp;
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  if (!serviceAccountJson) {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON is not configured.");
+  }
+  const serviceAccount = JSON.parse(serviceAccountJson);
+  firebaseAdminApp = admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+  return firebaseAdminApp;
+}
+
+async function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const allowUnauthenticated = process.env.ALLOW_UNAUTHENTICATED_DEV === "true" && process.env.NODE_ENV !== "production";
+  if (allowUnauthenticated) {
+    return next();
+  }
+
+  try {
+    getFirebaseAdmin();
+  } catch (error: any) {
+    return res.status(500).json({ error: error.message || "Server auth is not configured." });
+  }
+
+  const authHeader = req.headers.authorization || "";
+  if (!authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Missing auth token." });
+  }
+
+  const token = authHeader.replace("Bearer ", "").trim();
+  if (!token) {
+    return res.status(401).json({ error: "Missing auth token." });
+  }
+
+  try {
+    await admin.auth().verifyIdToken(token);
+    return next();
+  } catch (error: any) {
+    return res.status(401).json({ error: error.message || "Invalid auth token." });
+  }
+}
+
+app.use("/api", requireAuth);
 
 // Lazy Initialize Gemini Client helper
 function getGemini(): GoogleGenAI {
@@ -39,22 +89,22 @@ async function callAIModel({
 }: {
   config?: {
     provider?: string;
-    apiKey?: string;
     model?: string;
-    endpoint?: string;
   };
   prompt: string;
   systemInstruction?: string;
   responseMimeType?: string;
 }) {
-  const provider = config?.provider || "gemini";
+  const provider = (config?.provider || "gemini").toLowerCase();
+  if (!ALLOWED_PROVIDERS.has(provider)) {
+    throw new Error(`Unsupported provider '${provider}'.`);
+  }
   const model = config?.model || "gemini-3.5-flash";
-  const apiKey = config?.apiKey || "";
 
   if (provider === "gemini") {
-    const actualApiKey = apiKey.trim() ? apiKey : (process.env.GEMINI_API_KEY || "");
+    const actualApiKey = process.env.GEMINI_API_KEY || "";
     if (!actualApiKey || actualApiKey === "MY_GEMINI_API_KEY") {
-      throw new Error("GEMINI_API_KEY is not configured in environment or custom models hub.");
+      throw new Error("GEMINI_API_KEY is not configured.");
     }
     const aiClient = new GoogleGenAI({ apiKey: actualApiKey });
     const response = await aiClient.models.generateContent({
@@ -67,29 +117,27 @@ async function callAIModel({
     });
     return response.text || "";
   } else {
-    // OpenAI, DeepSeek, OpenRouter, or Custom API compatible endpoints
+    // OpenAI, DeepSeek, or OpenRouter endpoints
     let url = "https://api.openai.com/v1/chat/completions";
-    let actualKey = apiKey;
+    let actualKey = "";
 
     if (provider === "deepseek") {
       url = "https://api.deepseek.com/v1/chat/completions";
     } else if (provider === "openrouter") {
       url = "https://openrouter.ai/api/v1/chat/completions";
-    } else if (provider === "custom" && config?.endpoint) {
-      url = config.endpoint;
     }
 
-    // Fallback key injection from environment if custom key is empty
-    if (!actualKey.trim()) {
-      if (provider === "openai") {
-        actualKey = process.env.OPENAI_API_KEY || "";
-      } else if (provider === "deepseek") {
-        actualKey = process.env.DEEPSEEK_API_KEY || "";
-      }
+    // Load provider keys from environment
+    if (provider === "openai") {
+      actualKey = process.env.OPENAI_API_KEY || "";
+    } else if (provider === "deepseek") {
+      actualKey = process.env.DEEPSEEK_API_KEY || "";
+    } else if (provider === "openrouter") {
+      actualKey = process.env.OPENROUTER_API_KEY || "";
     }
 
     if (!actualKey.trim()) {
-      throw new Error(`API Key for provider '${provider}' is missing. Please add it in your Custom Models Configurer.`);
+      throw new Error(`API Key for provider '${provider}' is missing.`);
     }
 
     const headers: Record<string, string> = {
@@ -593,9 +641,11 @@ app.post("/api/generate-diagram-image", async (req, res) => {
   }
 
   try {
-    const provider = config?.provider || "gemini";
+    const provider = (config?.provider || "gemini").toLowerCase();
+    if (!ALLOWED_PROVIDERS.has(provider)) {
+      return res.status(400).json({ error: `Unsupported provider '${provider}'.` });
+    }
     const model = config?.model || "gemini-3.1-flash-image-preview";
-    const apiKey = config?.apiKey || "";
 
     const prompt = `A highly detailed scientific, medical or technical diagram model for '${noteTitle}' (${noteCategory}). It must be structured with visual stages, arrows, schematic definitions and glowing dark slate accents. High fidelity educational illustration, textbook schematic format, clear lines, high resolution, black background.`;
 
@@ -633,12 +683,11 @@ app.post("/api/generate-diagram-image", async (req, res) => {
           }
         }
       }
-    } else if (provider === "openai" || provider === "deepseek" || provider === "custom" || provider === "openrouter") {
-      let actualKey = apiKey.trim();
-      if (!actualKey) {
-        if (provider === "openai") actualKey = process.env.OPENAI_API_KEY || "";
-        else if (provider === "deepseek") actualKey = process.env.DEEPSEEK_API_KEY || "";
-      }
+    } else if (provider === "openai" || provider === "deepseek" || provider === "openrouter") {
+      let actualKey = "";
+      if (provider === "openai") actualKey = process.env.OPENAI_API_KEY || "";
+      else if (provider === "deepseek") actualKey = process.env.DEEPSEEK_API_KEY || "";
+      else if (provider === "openrouter") actualKey = process.env.OPENROUTER_API_KEY || "";
 
       if (actualKey) {
         const dBody = {
@@ -647,7 +696,7 @@ app.post("/api/generate-diagram-image", async (req, res) => {
           n: 1,
           size: "1024x1024" // optimized card size
         };
-        const endpoint = (config?.endpoint && config?.endpoint.trim() !== "") ? config.endpoint : "https://api.openai.com/v1/images/generations";
+        const endpoint = "https://api.openai.com/v1/images/generations";
         const response = await fetch(endpoint, {
           method: "POST",
           headers: {
@@ -771,8 +820,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`ParkNote Engine running on http://localhost:${PORT}`);
+  app.listen(PORT, HOST, () => {
+    console.log(`ParkNote Engine running on http://${HOST}:${PORT}`);
   });
 }
 

@@ -71,7 +71,6 @@ export interface UserAccount {
   id: string;
   email: string;
   fullName: string;
-  passwordHash: string;
   role: "admin" | "user";
   avatarStyle: string;
   avatarSeed: string;
@@ -80,4 +79,3 @@ export interface UserAccount {
   notesCount: number;
   bio?: string;
 }
-

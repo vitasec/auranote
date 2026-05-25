@@ -24,3 +24,9 @@ export const logOut = async () => {
     throw error;
   }
 };
+
+export const getAuthToken = async () => {
+  const user = auth.currentUser;
+  if (!user) return null;
+  return user.getIdToken();
+};
