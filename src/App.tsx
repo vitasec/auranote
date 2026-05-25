@@ -354,9 +354,9 @@ export default function App() {
     const demoAccounts: UserAccount[] = [
       {
         id: "usr_aylan",
-        email: "aylan@macabalitao.com",
+        email: "",
         fullName: "Aylan Macabalitao",
-        passwordHash: "aylan",
+        passwordHash: "",
         role: "user",
         avatarStyle: "miniavs",
         avatarSeed: "Aylan",
@@ -366,9 +366,9 @@ export default function App() {
       },
       {
         id: "usr_admin",
-        email: "admin@parknote.com",
+        email: "",
         fullName: "Admin Manager",
-        passwordHash: "admin123",
+        passwordHash: "",
         role: "admin",
         avatarStyle: "bottts",
         avatarSeed: "Admin",
