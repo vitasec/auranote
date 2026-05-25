@@ -45,7 +45,5 @@ React 19 + Vite, TypeScript, Express API, @google/genai (Gemini), Firebase Auth,
 | `npm run lint` | TypeScript type-check |                                                                                                                                                                                                  
 | `npm run clean` | Cleans `dist` and `server.js` |                                                                                                                                                                                         
                                                                                                                                                                                                                                             
-## Demo accounts                                                                                                                                                                                                                            
-- `aylan@macabalitao.com` / 
-- `admin@parknote.com` / 
+
 
